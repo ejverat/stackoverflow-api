@@ -1,33 +1,65 @@
 use crate::models::*;
-use axum::{Json, response::IntoResponse};
+use axum::{Json, http::StatusCode, response::IntoResponse};
 
 // ---- CRUD for Questions ----
 
 pub async fn create_question(Json(question): Json<Question>) -> impl IntoResponse {
-    todo!()
+    let question_created = QuestionDetail {
+        question_uuid: "invalid uuid".to_owned(),
+        title: question.title,
+        description: question.description,
+        created_at: "invalid date".to_owned(),
+    };
+    Json(question_created)
 }
 
 pub async fn read_questions() -> impl IntoResponse {
-    todo!()
+    let mut questions = vec![];
+
+    let question_dummy = QuestionDetail {
+        question_uuid: "invalid uuid".to_owned(),
+        title: "Test title".to_owned(),
+        description: "Test description".to_owned(),
+        created_at: "invalid date".to_owned(),
+    };
+
+    questions.push(question_dummy);
+
+    Json(questions)
 }
 
 pub async fn delete_question(Json(question_uuid): Json<QuestionId>) {
-    todo!()
+    //
 }
 
 // ---- CRUD for Answers ----
 
-// TODO: Create a POST route to /answer which accepts an `Answer` and returns `AnswerDetail` as JSON.
-//       The handler function should be called `create_answer`.
-//
-//       hint: this function should look very similar to the create_question function above
+pub async fn create_answer(Json(answer): Json<Answer>) -> impl IntoResponse {
+    let created_answer = AnswerDetail {
+        answer_uuid: "invalid uuid".to_owned(),
+        question_uuid: answer.question_uuid,
+        content: answer.content,
+        created_at: "invalid date".to_owned(),
+    };
 
-// TODO: Create a GET route to /answers which accepts an `QuestionId` and returns a vector of `AnswerDetail` as JSON.
-//       The handler function should be called `read_answers`.
-//
-//       hint: this function should look very similar to the read_questions function above
+    Json(created_answer)
+}
 
-// TODO: Create a DELETE route to /answer which accepts an `AnswerId` and does not return anything.
-//       The handler function should be called `delete_answer`.
-//
-//       hint: this function should look very similar to the delete_question function above
+pub async fn read_answers(Json(question_id): Json<QuestionId>) -> impl IntoResponse {
+    let mut answers = vec![];
+
+    let created_answer = AnswerDetail {
+        answer_uuid: "invalid uuid".to_owned(),
+        question_uuid: question_id.question_uuid,
+        content: "Test answer content".to_owned(),
+        created_at: "invalid date".to_owned(),
+    };
+
+    answers.push(created_answer);
+
+    Json(answers)
+}
+
+pub async fn delete_answer(Json(answer_id): Json<AnswerId>) {
+    //
+}
