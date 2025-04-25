@@ -1,4 +1,9 @@
-use std::net::SocketAddr;
+use dotenvy::*;
+use log::*;
+use pretty_env_logger::*;
+use sqlx::postgres::PgPoolOptions;
+
+use std::{env, net::SocketAddr};
 
 use axum::{
     Router,
@@ -12,6 +17,25 @@ use handlers::*;
 
 #[tokio::main]
 async fn main() {
+    pretty_env_logger::init();
+    dotenvy::dotenv().expect("Init dotenvy");
+
+    let db_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(db_url.as_str())
+        .await
+        .expect("Database connection");
+
+    let recs = sqlx::query!("SELECT * from questions")
+        .fetch_all(&pool)
+        .await
+        .expect("Getting questions entries");
+
+    info!("********* Question Records *********");
+    info!("{:?}", recs);
+
     let app = Router::new()
         .route("/question", post(create_question))
         .route("/questions", get(read_questions))
