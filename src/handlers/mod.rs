@@ -1,67 +1,76 @@
-use crate::models::*;
-use axum::{Json, http::StatusCode, response::IntoResponse};
+use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
+use handlers_inner::HandlerError;
+
+use crate::{AppState, models::*};
 
 mod handlers_inner;
 
+impl IntoResponse for handlers_inner::HandlerError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            handlers_inner::HandlerError::BadRequest(msg) => {
+                (StatusCode::BAD_REQUEST, msg).into_response()
+            }
+            handlers_inner::HandlerError::InternalError(msg) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
+            }
+        }
+    }
+}
+
 // ---- CRUD for Questions ----
 
-pub async fn create_question(Json(question): Json<Question>) -> impl IntoResponse {
-    let question_created = QuestionDetail {
-        question_uuid: "invalid uuid".to_owned(),
-        title: question.title,
-        description: question.description,
-        created_at: "invalid date".to_owned(),
-    };
-    Json(question_created)
+pub async fn create_question(
+    State(AppState { questions_dao, .. }): State<AppState>,
+    Json(question): Json<Question>,
+) -> Result<impl IntoResponse, HandlerError> {
+    let new_question = handlers_inner::create_question(question, questions_dao.as_ref()).await?;
+
+    Ok(Json(new_question))
 }
 
-pub async fn read_questions() -> impl IntoResponse {
-    let mut questions = vec![];
+pub async fn read_questions(
+    State(AppState { questions_dao, .. }): State<AppState>,
+) -> Result<impl IntoResponse, HandlerError> {
+    let questions = handlers_inner::read_questions(questions_dao.as_ref()).await?;
 
-    let question_dummy = QuestionDetail {
-        question_uuid: "invalid uuid".to_owned(),
-        title: "Test title".to_owned(),
-        description: "Test description".to_owned(),
-        created_at: "invalid date".to_owned(),
-    };
-
-    questions.push(question_dummy);
-
-    Json(questions)
+    Ok(Json(questions))
 }
 
-pub async fn delete_question(Json(question_uuid): Json<QuestionId>) {
-    //
+pub async fn delete_question(
+    State(AppState { questions_dao, .. }): State<AppState>,
+    Json(question_uuid): Json<QuestionId>,
+) -> Result<impl IntoResponse, HandlerError> {
+    handlers_inner::delete_question(question_uuid, questions_dao.as_ref()).await?;
+
+    Ok(())
 }
 
 // ---- CRUD for Answers ----
 
-pub async fn create_answer(Json(answer): Json<Answer>) -> impl IntoResponse {
-    let created_answer = AnswerDetail {
-        answer_uuid: "invalid uuid".to_owned(),
-        question_uuid: answer.question_uuid,
-        content: answer.content,
-        created_at: "invalid date".to_owned(),
-    };
+pub async fn create_answer(
+    State(AppState { answers_dao, .. }): State<AppState>,
+    Json(answer): Json<Answer>,
+) -> Result<impl IntoResponse, HandlerError> {
+    let new_answer = handlers_inner::create_answer(answer, answers_dao.as_ref()).await?;
 
-    Json(created_answer)
+    Ok(Json(new_answer))
 }
 
-pub async fn read_answers(Json(question_id): Json<QuestionId>) -> impl IntoResponse {
-    let mut answers = vec![];
+pub async fn read_answers(
+    State(AppState { answers_dao, .. }): State<AppState>,
+    Json(question_id): Json<QuestionId>,
+) -> Result<impl IntoResponse, HandlerError> {
+    let answers = handlers_inner::read_answers(question_id, answers_dao.as_ref()).await?;
 
-    let created_answer = AnswerDetail {
-        answer_uuid: "invalid uuid".to_owned(),
-        question_uuid: question_id.question_uuid,
-        content: "Test answer content".to_owned(),
-        created_at: "invalid date".to_owned(),
-    };
-
-    answers.push(created_answer);
-
-    Json(answers)
+    Ok(Json(answers))
 }
 
-pub async fn delete_answer(Json(answer_id): Json<AnswerId>) {
-    //
+pub async fn delete_answer(
+    State(AppState { answers_dao, .. }): State<AppState>,
+    Json(answer_id): Json<AnswerId>,
+) -> Result<impl IntoResponse, HandlerError> {
+    handlers_inner::delete_answer(answer_id, answers_dao.as_ref()).await?;
+
+    Ok(())
 }
