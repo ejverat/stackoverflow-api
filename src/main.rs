@@ -1,7 +1,13 @@
-use dotenvy::*;
-use log::*;
-use pretty_env_logger::*;
+#[macro_use]
+extern crate log;
+
+extern crate pretty_env_logger;
+
+use dotenvy::dotenv;
+
 use sqlx::postgres::PgPoolOptions;
+
+use pretty_env_logger::*;
 
 use std::{env, net::SocketAddr};
 
@@ -12,6 +18,7 @@ use axum::{
 
 mod handlers;
 mod models;
+mod persistance;
 
 use handlers::*;
 
@@ -27,14 +34,6 @@ async fn main() {
         .connect(db_url.as_str())
         .await
         .expect("Database connection");
-
-    let recs = sqlx::query!("SELECT * from questions")
-        .fetch_all(&pool)
-        .await
-        .expect("Getting questions entries");
-
-    info!("********* Question Records *********");
-    info!("{:?}", recs);
 
     let app = Router::new()
         .route("/question", post(create_question))
